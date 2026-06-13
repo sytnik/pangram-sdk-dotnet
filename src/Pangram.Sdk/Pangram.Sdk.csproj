@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <TargetFrameworks>net9.0;net10.0</TargetFrameworks>
+        <LangVersion>latest</LangVersion>
+        <Nullable>enable</Nullable>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+        <!-- NuGet packaging -->
+        <PackageId>Pangram.Sdk</PackageId>
+        <Version>1.0.0</Version>
+        <Authors>Community</Authors>
+        <Company></Company>
+        <Product>Pangram .NET SDK (Unofficial)</Product>
+        <Description>Unofficial .NET SDK for the Pangram Labs API — AI-generated text detection and plagiarism checking. Not affiliated with or endorsed by Pangram Labs.</Description>
+        <PackageTags>pangram;ai-detection;plagiarism;text-analysis;ai;llm</PackageTags>
+        <PackageProjectUrl>https://docs.pangram.com</PackageProjectUrl>
+        <PackageLicenseExpression>MIT</PackageLicenseExpression>
+        <PackageReadmeFile>README.md</PackageReadmeFile>
+        <RepositoryType>git</RepositoryType>
+        <PublishRepositoryUrl>true</PublishRepositoryUrl>
+        <EmbedUntrackedSources>true</EmbedUntrackedSources>
+        <IncludeSymbols>true</IncludeSymbols>
+        <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+        <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+        <PackageReleaseNotes>Initial release of the Pangram .NET SDK.</PackageReleaseNotes>
+    </PropertyGroup>
+    <ItemGroup>
+        <None Include="..\..\README.md" Pack="true" PackagePath="\"/>
+    </ItemGroup>
+</Project>

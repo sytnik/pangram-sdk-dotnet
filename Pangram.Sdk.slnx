@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="src/Pangram.Sdk/Pangram.Sdk.csproj" />
+  <Project Path="src/Pangram.Sdk.WinForms/Pangram.Sdk.WinForms.csproj" />
+  <Project Path="tests/Pangram.Sdk.Tests/Pangram.Sdk.Tests.csproj" />
+</Solution>

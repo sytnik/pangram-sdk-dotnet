@@ -1,0 +1,114 @@
+name: Publish to NuGet
+
+on:
+  release:
+    types: [ published ]         # triggers when you publish a GitHub Release
+  workflow_dispatch: # allows manual trigger from the Actions tab
+    inputs:
+      version:
+        description: 'Package version to publish (e.g. 1.2.3)'
+        required: true
+
+jobs:
+  publish:
+    name: Build, pack & push
+    runs-on: ubuntu-latest
+
+    steps:
+      # -----------------------------------------------------------------------
+      # 1. Checkout
+      # -----------------------------------------------------------------------
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0       # full history for source-link
+
+      # -----------------------------------------------------------------------
+      # 2. Resolve the package version
+      #    - Release trigger  → strip leading 'v' from the tag (e.g. v1.2.3 → 1.2.3)
+      #    - Manual trigger   → use the workflow_dispatch input
+      # -----------------------------------------------------------------------
+      - name: Resolve package version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" == "release" ]; then
+            VERSION="${{ github.event.release.tag_name }}"
+            VERSION="${VERSION#v}"           # strip optional leading 'v'
+          else
+            VERSION="${{ github.event.inputs.version }}"
+          fi
+          echo "VERSION=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "Resolved version: $VERSION"
+
+      # -----------------------------------------------------------------------
+      # 3. Setup .NET (supports both net8.0 and netstandard2.0 builds)
+      # -----------------------------------------------------------------------
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.x'
+
+      # -----------------------------------------------------------------------
+      # 4. Restore → Build → Test (if tests project exists) → Pack
+      # -----------------------------------------------------------------------
+      - name: Restore dependencies
+        run: dotnet restore
+
+      - name: Build (Release)
+        run: >
+          dotnet build
+          --configuration Release
+          --no-restore
+          /p:Version=${{ steps.version.outputs.VERSION }}
+
+      - name: Run tests
+        run: |
+          if compgen -G "tests/**/*.csproj" > /dev/null 2>&1; then
+            dotnet test --configuration Release --no-build --verbosity normal
+          else
+            echo "No test projects found – skipping."
+          fi
+
+      - name: Pack NuGet package
+        run: >
+          dotnet pack src/Pangram.Sdk/Pangram.Sdk.csproj
+          --configuration Release
+          --no-build
+          --output ./nupkgs
+          /p:Version=${{ steps.version.outputs.VERSION }}
+
+      # -----------------------------------------------------------------------
+      # 5. Push to NuGet.org
+      #    Store your NuGet API key in a repository secret named NUGET_API_KEY
+      # -----------------------------------------------------------------------
+      - name: Push to NuGet.org
+        run: >
+          dotnet nuget push "./nupkgs/*.nupkg"
+          --api-key ${{ secrets.NUGET_API_KEY }}
+          --source https://api.nuget.org/v3/index.json
+          --skip-duplicate
+
+      # -----------------------------------------------------------------------
+      # 6. Push symbols package (.snupkg) if it was generated
+      # -----------------------------------------------------------------------
+      - name: Push symbols to NuGet.org
+        run: |
+          if compgen -G "./nupkgs/*.snupkg" > /dev/null 2>&1; then
+            dotnet nuget push "./nupkgs/*.snupkg" \
+              --api-key ${{ secrets.NUGET_API_KEY }} \
+              --source https://api.nuget.org/v3/index.json \
+              --skip-duplicate
+          else
+            echo "No .snupkg found – skipping."
+          fi
+
+      # -----------------------------------------------------------------------
+      # 7. Upload artifacts so the .nupkg is accessible from the run summary
+      # -----------------------------------------------------------------------
+      - name: Upload package artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: nuget-packages-${{ steps.version.outputs.VERSION }}
+          path: ./nupkgs/
+          retention-days: 30
+

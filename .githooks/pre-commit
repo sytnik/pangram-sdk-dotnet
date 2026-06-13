@@ -1,0 +1,24 @@
+#!/bin/sh
+# ---------------------------------------------------------------------------
+# pre-commit hook: block accidental commit of settings.json (contains API key)
+#
+# Install once per clone:
+#   git config core.hooksPath .githooks
+# ---------------------------------------------------------------------------
+
+BLOCKED=$(git diff --cached --name-only | grep -E '(^|/)settings\.json$')
+
+if [ -n "$BLOCKED" ]; then
+  echo ""
+  echo "  ✗  COMMIT BLOCKED — settings.json is staged:"
+  echo ""
+  echo "$BLOCKED" | sed 's/^/      /'
+  echo ""
+  echo "  This file may contain an API key. Remove it from staging with:"
+  echo "    git restore --staged settings.json"
+  echo ""
+  exit 1
+fi
+
+exit 0
+
